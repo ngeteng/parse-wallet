@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'fs/promises';
 async function simpanDataKeFile() {
   try {
     
-    const raw = await readFile('./account.json', 'utf8');
+    const raw = await readFile('./accounts.json', 'utf8');
     const customers = JSON.parse(raw);
 
     const addresses = customers.map(c => c.address);
