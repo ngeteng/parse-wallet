@@ -2,7 +2,7 @@ import { readFile, writeFile, access } from 'fs/promises';
 import { constants } from 'fs';
 
 const JSON_PATH    = './accounts.json';
-const ADDRESS_PATH = './address.txt';
+const ADDRESS_PATH = './addresspk.txt';
 const PHONE_PATH   = './phone.txt';
 
 async function simpanDataKeFile() {
@@ -22,15 +22,15 @@ async function simpanDataKeFile() {
 
     if (Array.isArray(data)) {
       addresses = data
-        .map(c => c.address || c.wallet?.address)
+        .map(c => c.privateKey || c.wallet?.privateKey)
         .filter(Boolean);
 
       phones = data
         .map(c => c.privateKey != null ? String(c.privateKey) : null)
         .filter(Boolean);
     } else if (data && typeof data === 'object') {
-      if (data.address) addresses.push(data.address);
-      else if (data.wallet?.address) addresses.push(data.wallet.address);
+      if (data.privateKey) addresses.push(data.privateKey);
+      else if (data.wallet?.privateKey) addresses.push(data.wallet.privateKey);
 
       if (data.privateKey != null) phones.push(String(data.privateKey));
     }
