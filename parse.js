@@ -1,7 +1,7 @@
 import { readFile, writeFile, access } from 'fs/promises';
 import { constants } from 'fs';
 
-const JSON_PATH    = './account.json';
+const JSON_PATH    = './accounts.json';
 const ADDRESS_PATH = './address.txt';
 const privateKey_PATH   = './privateKey.txt';
 
