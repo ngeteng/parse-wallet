@@ -50,7 +50,6 @@ async function exportPrivateKeys(jsonFile, outputFile) {
   }
 }
 
-// Jalankan fungsi, ganti nama file jika perlu
-e (async () => {
+// Jalankan fungsi secara langsung\;(async () => {
   await exportPrivateKeys('accounts.json', 'privatekey.txt');
 })();
