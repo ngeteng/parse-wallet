@@ -1,25 +1,58 @@
-import { readFile, writeFile } from 'fs/promises';
+import { readFile, writeFile, access } from 'fs/promises';
+import { constants } from 'fs';
+
+const JSON_PATH    = './account.json';
+const ADDRESS_PATH = './address.txt';
+const privateKey_PATH   = './privateKey.txt';
 
 async function simpanDataKeFile() {
   try {
-    
-    const raw = await readFile('./accounts.json', 'utf8');
-    const customers = JSON.parse(raw);
+    // Pastikan file JSON ada dan bisa dibaca
+    await access(JSON_PATH, constants.R_OK);
+  } catch {
+    console.error(`❌ File tidak ditemukan atau tidak bisa dibaca: ${JSON_PATH}`);
+    process.exit(1);
+  }
 
-    const addresses = customers.map(c => c.address);
-    const privateKey    = customers.map(c => c.privateKey);
+  try {
+    const raw = await readFile(JSON_PATH, 'utf8');
+    const data = JSON.parse(raw);
 
-    const addressText = addresses.join('\n');
-    const phoneText   = privateKey.join('\n');
+    let addresses = [];
+    let phones = [];
 
-    await writeFile('./address.txt', addressText, 'utf8');
-    console.log('✅ Semua alamat berhasil disimpan di address.txt');
+    if (Array.isArray(data)) {
+      // Jika JSON berupa array objek
+      console.log(`Ditemukan array dengan ${data.length} item`);
+      addresses = data
+        .map(c => c.address || c.wallet?.address)
+        .filter(Boolean);
+      phones = data
+        .map(c => c.privateKey)
+        .filter(Boolean);
+    } else if (typeof data === 'object' && data !== null) {
+      // Jika JSON objek tunggal
+      console.log('Ditemukan objek tunggal');
+      if (data.address) addresses.push(data.address);
+      else if (data.wallet?.address) addresses.push(data.wallet.address);
 
-    await writeFile('./privateKey.txt', phoneText, 'utf8');
-    console.log('✅ Semua berhasil disimpan di privateKey.txt');
+      if (data.phone) phones.push(data.phone);
+    } else {
+      console.warn('⚠️ Format JSON tidak didukung:', typeof data);
+    }
+
+    if (addresses.length === 0) console.warn('⚠️ Tidak ada address yang berhasil di-ekstrak');
+    if (phones.length === 0)    console.warn('⚠️ Tidak ada phone yang berhasil di-ekstrak');
+
+    // Tulis ke file
+    await writeFile(ADDRESS_PATH, addresses.join('\n'), 'utf8');
+    console.log(`✅ address.txt dibuat dengan ${addresses.length} baris`);
+
+    await writeFile(privateKey_PATH, phones.join('\n'), 'utf8');
+    console.log(`✅ phone.txt dibuat dengan ${phones.length} baris`);
 
   } catch (err) {
-    console.error('❌ Terjadi kesalahan:', err);
+    console.error('❌ Terjadi kesalahan saat memproses data:', err);
   }
 }
 
