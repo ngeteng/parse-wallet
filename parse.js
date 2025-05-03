@@ -1,48 +1,37 @@
-import { readFile, writeFile, access } from 'fs/promises';
-import { constants } from 'fs';
+// extractPrivateKeys.js
 
-const JSON_PATH    = './accounts.json';
-const ADDRESS_PATH = './addresspk.txt';
-const PHONE_PATH   = './phone.txt';
+const fs = require('fs');
+const path = require('path');
 
-async function simpanDataKeFile() {
+async function exportPrivateKeys(jsonFile, outputFile) {
   try {
-    await access(JSON_PATH, constants.R_OK);
-  } catch {
-    console.error(`❌ File tidak ditemukan atau tidak bisa dibaca: ${JSON_PATH}`);
-    process.exit(1);
-  }
+    // 1. Tentukan path ke file accounts.json dan privatekey.txt
+    const inputPath = path.resolve(__dirname, jsonFile);
+    const outputPath = path.resolve(__dirname, outputFile);
 
-  try {
-    const raw = await readFile(JSON_PATH, 'utf8');
-    const data = JSON.parse(raw);
+    // 2. Baca dan parse JSON
+    const rawData = await fs.promises.readFile(inputPath, 'utf8');
+    const accounts = JSON.parse(rawData);
 
-    let addresses = [];
-    let phones = [];
+    // 3. Ekstrak semua privateKey
+    const privateKeys = accounts.map(acc => acc.privateKey).filter(Boolean);
 
-    if (Array.isArray(data)) {
-      addresses = data
-        .map(c => c.privateKey || c.wallet?.privateKey)
-        .filter(Boolean);
-
-      phones = data
-        .map(c => c.privateKey != null ? String(c.privateKey) : null)
-        .filter(Boolean);
-    } else if (data && typeof data === 'object') {
-      if (data.privateKey) addresses.push(data.privateKey);
-      else if (data.wallet?.privateKey) addresses.push(data.wallet.privateKey);
-
-      if (data.privateKey != null) phones.push(String(data.privateKey));
+    if (privateKeys.length === 0) {
+      console.warn('Tidak ada privateKey yang ditemukan di', jsonFile);
+      return;
     }
 
-    await writeFile(ADDRESS_PATH, addresses.join('\n'), 'utf8');
-    console.log(`✅ address.txt dibuat dengan ${addresses.length} baris`);
+    // 4. Gabungkan dengan newline dan tulis ke file
+    const fileContent = privateKeys.join('\n');
+    await fs.promises.writeFile(outputPath, fileContent, 'utf8');
 
-    await writeFile(PHONE_PATH, phones.join('\n'), 'utf8');
-    console.log(`✅ phone.txt dibuat dengan ${phones.length} baris`);
+    console.log(`Berhasil menulis ${privateKeys.length} privateKey ke ${outputFile}`);
   } catch (err) {
-    console.error('❌ Terjadi kesalahan saat memproses data:', err);
+    console.error('Error saat memproses file:', err.message);
   }
 }
 
-simpanDataKeFile();
+// Jalankan fungsi dengan nama file input & output
+(async () => {
+  await exportPrivateKeys('accounts.json', 'privatekey.txt');
+})();
