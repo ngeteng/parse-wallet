@@ -14,7 +14,7 @@ function findPrivateKeys(obj) {
     for (const [k, v] of Object.entries(obj)) {
       if (k.toLowerCase() === 'privatekey' && typeof v === 'string') {
         keys.push(v);
-      } else if (typeof v === 'object' && v !== null) {
+      } else if (v && typeof v === 'object') {
         keys = keys.concat(findPrivateKeys(v));
       }
     }
@@ -24,15 +24,12 @@ function findPrivateKeys(obj) {
 
 async function exportPrivateKeys(jsonFile, outputFile) {
   try {
-    // 1. Tentukan path ke file input & output
     const inputPath = path.resolve(__dirname, jsonFile);
     const outputPath = path.resolve(__dirname, outputFile);
 
-    // 2. Baca dan parse JSON
     const rawData = await fs.promises.readFile(inputPath, 'utf8');
     const parsed = JSON.parse(rawData);
 
-    // 3. Temukan semua privateKey secara rekursif
     const privateKeys = findPrivateKeys(parsed);
 
     if (privateKeys.length === 0) {
@@ -40,7 +37,6 @@ async function exportPrivateKeys(jsonFile, outputFile) {
       return;
     }
 
-    // 4. Tulis hasil ke file, setiap key pada baris baru
     const fileContent = privateKeys.join('\n');
     await fs.promises.writeFile(outputPath, fileContent, 'utf8');
 
@@ -50,6 +46,7 @@ async function exportPrivateKeys(jsonFile, outputFile) {
   }
 }
 
-// Jalankan fungsi secara langsung\;(async () => {
+// Jalankan fungsi secara langsung dengan IIFE
+(async () => {
   await exportPrivateKeys('accounts.json', 'privatekey.txt');
 })();
