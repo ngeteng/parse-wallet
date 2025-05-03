@@ -3,25 +3,44 @@
 const fs = require('fs');
 const path = require('path');
 
+/**
+ * Recursively mencari semua nilai privateKey di dalam objek.
+ * @param {Object} obj - Objek JSON yang akan di-scan.
+ * @returns {string[]} Array daftar privateKey.
+ */
+function findPrivateKeys(obj) {
+  let keys = [];
+  if (obj && typeof obj === 'object') {
+    for (const [k, v] of Object.entries(obj)) {
+      if (k.toLowerCase() === 'privatekey' && typeof v === 'string') {
+        keys.push(v);
+      } else if (typeof v === 'object' && v !== null) {
+        keys = keys.concat(findPrivateKeys(v));
+      }
+    }
+  }
+  return keys;
+}
+
 async function exportPrivateKeys(jsonFile, outputFile) {
   try {
-    // 1. Tentukan path ke file accounts.json dan privatekey.txt
+    // 1. Tentukan path ke file input & output
     const inputPath = path.resolve(__dirname, jsonFile);
     const outputPath = path.resolve(__dirname, outputFile);
 
     // 2. Baca dan parse JSON
     const rawData = await fs.promises.readFile(inputPath, 'utf8');
-    const accounts = JSON.parse(rawData);
+    const parsed = JSON.parse(rawData);
 
-    // 3. Ekstrak semua privateKey
-    const privateKeys = accounts.map(acc => acc.privateKey).filter(Boolean);
+    // 3. Temukan semua privateKey secara rekursif
+    const privateKeys = findPrivateKeys(parsed);
 
     if (privateKeys.length === 0) {
-      console.warn('Tidak ada privateKey yang ditemukan di', jsonFile);
+      console.warn(`Tidak ada privateKey yang ditemukan di ${jsonFile}`);
       return;
     }
 
-    // 4. Gabungkan dengan newline dan tulis ke file
+    // 4. Tulis hasil ke file, setiap key pada baris baru
     const fileContent = privateKeys.join('\n');
     await fs.promises.writeFile(outputPath, fileContent, 'utf8');
 
@@ -31,7 +50,7 @@ async function exportPrivateKeys(jsonFile, outputFile) {
   }
 }
 
-// Jalankan fungsi dengan nama file input & output
-(async () => {
+// Jalankan fungsi, ganti nama file jika perlu
+e (async () => {
   await exportPrivateKeys('accounts.json', 'privatekey.txt');
 })();
